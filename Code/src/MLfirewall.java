@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Open Networking Foundation
+ * Copyright 2018 Open Networking Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,8 +59,8 @@ import static org.onosproject.net.flow.FlowRuleEvent.Type.RULE_REMOVED;
 import static org.onosproject.net.flow.criteria.Criterion.Type.ETH_SRC;
 
 /**
- * Sample application that permits only one ICMP ping per minute for a unique
- * src/dst MAC pair per switch.
+ * Application that calls a Machine Learning server to
+ * determine if traffic should be ALLOWed or BLOCKed.
  */
 @Component(immediate = true)
 public class MLfirewall {
@@ -263,54 +263,4 @@ public class MLfirewall {
             }
         }
     }
-}
-
-
-
-class JavaClientTest
-{
-	Socket socket = null;
-	PrintWriter out = null;
-	BufferedReader in = null;
-	
-	public void communicate()
-	{
-		String name = "Test";
-
-		//Send data over socket
-		out.println(name);
-
-		//Receive text from server
-		try
-		{
-			String line = in.readLine();
-			System.out.println("Text received: " + line);
-		} 
-		catch (IOException e)
-		{
-			System.out.println("Read failed");
-			System.exit(1);
-		}
-	}
-  
-	public void listenSocket(String host, int port)
-	{
-		//Create socket connection
-		try
-		{
-			socket = new Socket(host, port);
-			out = new PrintWriter(socket.getOutputStream(), true);
-			in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-		} 
-		catch (UnknownHostException e) 
-		{
-			System.out.println("Unknown host");
-			System.exit(1);
-		} 
-		catch (IOException e) 
-		{
-			System.out.println("No I/O");
-			System.exit(1);
-		}
-	}
 }
