@@ -40,18 +40,17 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
 if __name__ == "__main__":
 	server = MLfirewallServer((SERVER_IP, SERVER_PORT), ThreadedTCPRequestHandler)
-	with server:
-		# Start a thread for the server. When client connects, a new thread will open for each client.
-		server_thread = threading.Thread(target=server.serve_forever)
-		# Exit the server thread when the main thread terminates
-		server_thread.daemon = True
-		server_thread.start()
-		printDebugMsg("Server running in thread: {}".format(server_thread.name))
-		
-		while True:
-			pass
-			
-		# Shut down server when finished.  Never actually reaches here since infinite loop above.
-		server.shutdown()
-		printDebugMsg("Shutting down server.")
 	
+	# Start a thread for the server. When client connects, a new thread will open for each client.
+	server_thread = threading.Thread(target=server.serve_forever)
+	# Exit the server thread when the main thread terminates
+	server_thread.daemon = True
+	server_thread.start()
+	printDebugMsg("Server running in thread: {}".format(server_thread.name))
+	
+	while True:
+		pass
+		
+	# Shut down server when finished.  Never actually reaches here since infinite loop above.
+	server.shutdown()
+	printDebugMsg("Shutting down server.")
