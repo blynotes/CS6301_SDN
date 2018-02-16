@@ -67,7 +67,7 @@ public class MLfirewall {
 	private static String SERVER_IP = "localhost";
 	private static int SERVER_PORT = 5678;
 
-    private static Logger log = LoggerFactory.getLogger(getClass());
+    private static Logger log = LoggerFactory.getLogger(MLfirewall.class);
 
     private static final String MSG_BLOCKING =
             "Blocking Traffic";
@@ -138,16 +138,16 @@ public class MLfirewall {
 			PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			
-			out.println("Data going to MLfirewallServer.py")
+			out.println("Data going to MLfirewallServer.py");
 			String responseBack = in.readLine();
 			
-			if responseBack.equals("ALLOW") {
+			if(responseBack.equals("ALLOW")) {
 				SERVER_DECISION_ALLOW = true;
 			} else {
 				SERVER_DECISION_ALLOW = false;
 			}
 			
-			log.warn("Server decided:", SERVER_DECISION_ALLOW)
+			log.warn("Server decided:", responseBack);
 			
 		} catch(Exception e) {
 			log.warn("Server Connection Error:", e);
@@ -156,7 +156,7 @@ public class MLfirewall {
 		if(SERVER_DECISION_ALLOW) {
 			log.warn(MSG_ALLOWING, src, dst, deviceId);
 			allowPackets(deviceId, src, dst);
-			context.send();
+//			context.send();
 		} else {
 			log.warn(MSG_BLOCKING, src, dst, deviceId);
 			banPackets(deviceId, src, dst);
