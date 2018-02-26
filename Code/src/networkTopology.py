@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 
 """
 Based on Mininet examples/hwintf.py
@@ -14,7 +14,7 @@ from mininet.link import Intf
 from mininet.topo import Topo
 from mininet.util import quietRun
 
-from mininet.node import RemoteController
+from mininet.node import RemoteController, OVSSwitch
 
 
 CONTROLLER_IP = "10.28.34.39"
@@ -23,18 +23,12 @@ CONTROLLER_PORT = 6633
 INTERFACE_FOR_VM1_PFSENSE = 'enp0s8'
 INTERFACE_FOR_VM2_LINUX = 'enp0s9'
 
-intfToSwitchMapping = {
-	INTERFACE_FOR_VM1_PFSENSE: 1
-	INTERFACE_FOR_VM2_LINUX: 2
-}
-
 
 class TriangleTopo( Topo ):
 	"Switches in triangle configuration with 3 hosts off each"
 	
-	def __init__(self):
-		# Initialize topology
-		Topo.__init__(self)
+	def build(self):
+		"Method to override in custom topology class."
 		
 		# Add switches
 		s1 = self.addSwitch( 's1' )
@@ -103,13 +97,13 @@ def runNetworkTopology():
 		autoSetMacs = True)
 	
 	# Connect VM1 to switch1
-	switch1 = net.switches[ intfToSwitchMapping[INTERFACE_FOR_VM1_PFSENSE] ]
+	switch1 = net.switches[ 1 ]  # switch 1
 	info( '*** Adding hardware interface', INTERFACE_FOR_VM1_PFSENSE, 'to switch',
 		  switch1.name, '\n' )
 	_intf1 = Intf( INTERFACE_FOR_VM1_PFSENSE, node=switch1 )
 	
 	# Connect VM2 to switch2
-	switch2 = net.switches[ intfToSwitchMapping[INTERFACE_FOR_VM2_LINUX] ]
+	switch2 = net.switches[ 2 ]  # switch 2
 	info( '*** Adding hardware interface', INTERFACE_FOR_VM2_LINUX, 'to switch',
 		  switch2.name, '\n' )
 	_intf2 = Intf( INTERFACE_FOR_VM2_LINUX, node=switch2 )
