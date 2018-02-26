@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 """
 Based on Mininet examples/hwintf.py
@@ -20,8 +20,13 @@ from mininet.node import RemoteController
 CONTROLLER_IP = "10.28.34.39"
 CONTROLLER_PORT = 6633
 
-INTERFACE_FOR_PARROT_OS = 'enp0s8'
-INTERFACE_FOR_SNORT_IDS = 'enp0s9'
+INTERFACE_FOR_VM1_PFSENSE = 'enp0s8'
+INTERFACE_FOR_VM2_LINUX = 'enp0s9'
+
+intfToSwitchMapping = {
+	INTERFACE_FOR_VM1_PFSENSE: 1
+	INTERFACE_FOR_VM2_LINUX: 2
+}
 
 
 class TriangleTopo( Topo ):
@@ -68,39 +73,68 @@ class TriangleTopo( Topo ):
 
 
 def checkIntf( intf ):
-    "Make sure intf exists and is not configured."
-    config = quietRun( 'ifconfig %s 2>/dev/null' % intf, shell=True )
-    if not config:
-        error( 'Error:', intf, 'does not exist!\n' )
-        exit( 1 )
-    ips = re.findall( r'\d+\.\d+\.\d+\.\d+', config )
-    if ips:
-        error( 'Error:', intf, 'has an IP address,'
-               'and is probably in use!\n' )
-        exit( 1 )
+	"Make sure intf exists and is not configured."
+	config = quietRun( 'ifconfig %s 2>/dev/null' % intf, shell=True )
+	if not config:
+		error( 'Error:', intf, 'does not exist!\n' )
+		exit( 1 )
+	ips = re.findall( r'\d+\.\d+\.\d+\.\d+', config )
+	if ips:
+		error( 'Error:', intf, 'has an IP address,'
+			   'and is probably in use!\n' )
+		exit( 1 )
 
+
+def runNetworkTopology():
+	"Create a Mininet network using the TriangleTopo"
+	
+	# Confirm interfaces are good
+	info( '*** Checking', INTERFACE_FOR_VM1_PFSENSE, '\n' )
+	checkIntf( INTERFACE_FOR_VM1_PFSENSE )
+	info( '*** Checking', INTERFACE_FOR_VM2_LINUX, '\n' )
+	checkIntf( INTERFACE_FOR_VM2_LINUX )
+	
+	info( '*** Creating network\n' )
+	# Create network using remote controller
+	net = Mininet(
+		topo=TriangleTopo(),
+		controller=lambda name: RemoteController(name, ip=CONTROLLER_IP, port=CONTROLLER_PORT),
+		switch=OVSSwitch,
+		autoSetMacs = True)
+	
+	# Connect VM1 to switch1
+	switch1 = net.switches[ intfToSwitchMapping[INTERFACE_FOR_VM1_PFSENSE] ]
+	info( '*** Adding hardware interface', INTERFACE_FOR_VM1_PFSENSE, 'to switch',
+		  switch1.name, '\n' )
+	_intf1 = Intf( INTERFACE_FOR_VM1_PFSENSE, node=switch1 )
+	
+	# Connect VM2 to switch2
+	switch2 = net.switches[ intfToSwitchMapping[INTERFACE_FOR_VM2_LINUX] ]
+	info( '*** Adding hardware interface', INTERFACE_FOR_VM2_LINUX, 'to switch',
+		  switch2.name, '\n' )
+	_intf2 = Intf( INTERFACE_FOR_VM2_LINUX, node=switch2 )
+	
+	# This only needs done if you select IP addresses for VM1 and VM2 that
+	# are the same IP as a node in your Mininet network.
+	info( '*** Note: you may need to reconfigure the interfaces for '
+		  'the Mininet hosts:\n', net.hosts, '\n' )
+	
+	# Start the network
+	net.start()
+	
+	# Let user enter CLI to run commands
+	CLI(net)
+	
+	# After user exits CLI, shutdown network.
+	net.stop()
+	
+	
+	
 if __name__ == '__main__':
-    setLogLevel( 'info' )
+	setLogLevel( 'info' )
+	runNetworkTopology()
 
-    # try to get hw intf from the command line; by default, use eth1
-    intfName = sys.argv[ 1 ] if len( sys.argv ) > 1 else 'enp0s8'
-    info( '*** Connecting to hw intf: %s' % intfName )
-
-    info( '*** Checking', intfName, '\n' )
-    checkIntf( intfName )
-
-    info( '*** Creating network\n' )
-    net = Mininet( controller=None, topo=TriangleTopo() )
-	net.addController("c0", controller=RemoteController, ip=CONTROLLER_IP, port=CONTROLLER_PORT)
-
-    switch = net.switches[ 0 ]
-    info( '*** Adding hardware interface', intfName, 'to switch',
-          switch.name, '\n' )
-    _intf = Intf( intfName, node=switch )
-
-    info( '*** Note: you may need to reconfigure the interfaces for '
-          'the Mininet hosts:\n', net.hosts, '\n' )
-
-    net.start()
-    CLI( net )
-    net.stop(
+# Allows the file to be imported using 'mn --custom <filename> --topo triangle'
+topos = {
+	'triangle' : TriangleTopo
+}
