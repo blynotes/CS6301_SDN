@@ -92,9 +92,7 @@ def runNetworkTopology():
 	# Create network using remote controller
 	net = Mininet(
 		topo=TriangleTopo(),
-		controller=lambda name: RemoteController(name, ip=CONTROLLER_IP, port=CONTROLLER_PORT),
-		switch=OVSSwitch,
-		autoSetMacs = True)
+		controller=lambda name: RemoteController(name, ip=CONTROLLER_IP, port=CONTROLLER_PORT))
 	
 	# Connect VM1 to switch1
 	switch1 = net.switches[ 1 ]  # switch 1
