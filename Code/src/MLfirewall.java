@@ -23,9 +23,13 @@ import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.ReferenceCardinality;
 import org.onlab.packet.Ethernet;
 import org.onlab.packet.IPv4;
+import org.onlab.packet.IpAddress;
+import org.onlab.packet.TCP;
+import org.onlab.packet.UDP;
 import org.onlab.packet.MacAddress;
 import org.onosproject.core.ApplicationId;
 import org.onosproject.core.CoreService;
+import org.onosproject.net.ConnectPoint;
 import org.onosproject.net.DeviceId;
 import org.onosproject.net.flow.DefaultTrafficSelector;
 import org.onosproject.net.flow.DefaultTrafficTreatment;
@@ -123,10 +127,44 @@ public class MLfirewall {
     }
 
     // Processes the specified packet.
-    private void processPacket(PacketContext context, Ethernet eth) {
-        DeviceId deviceId = context.inPacket().receivedFrom().deviceId();
-        MacAddress src = eth.getSourceMAC();
-        MacAddress dst = eth.getDestinationMAC();
+    private void processPacket(PacketContext context) {
+		InboundPkt pkt = context.inPacket()
+		
+		// Get where the packet was received from.
+		ConnectPoint connectPoint = pkt.receivedFrom();
+		DeviceId deviceId = connectPoint.deviceId();
+		
+		// Get L2 Info.
+		Ethernet eth = pkt.parsed();
+        MacAddress srcMAC = eth.getSourceMAC();
+        MacAddress dstMAC = eth.getDestinationMAC();
+		
+		//https://github.com/opennetworkinglab/onos/blob/master/apps/bgprouter/src/main/java/org/onosproject/bgprouter/IcmpHandler.java
+		// Get L3 Info.
+		IPv4 ipv4 = (IPv4) eth.getPayload();
+		IpAddress srcIPv4 = IpAddress.valueOf(ipv4.getSourceAddress());
+        IpAddress dstIPv4 = IpAddress.valueOf(ipv4.getDestinationAddress());
+		
+		// https://github.com/opennetworkinglab/onos/blob/master/apps/bgprouter/src/main/java/org/onosproject/bgprouter/TunnellingConnectivityManager.java
+		// Get L4 Info.
+		if (ipv4.getProtocol() == IPv4.PROTOCOL_TCP) {
+			TCP L4pkt = (TCP) ipv4.getPayload();
+			int srcPort = L4pkt.getSourcePort();
+			int dstPort = L4pkt.getDestinationPort();
+		} else if (ipv4.getProtocol() == IPv4.PROTOCOL_UDP) {
+			UDP L4pkt = (UDP) ipv4.getPayload();
+			int srcPort = L4pkt.getSourcePort();
+			int dstPort = L4pkt.getDestinationPort();
+		} else {
+			// Not TCP or UDP.
+			int srcPort = null;
+			int dstPort = null;
+		}
+		
+		String sendToServer = "srcMAC=" + srcMAC + ";dstMAC=" + dstMAC + ";srcIPv4=" + srcIPv4 + ";dstIPv4=" + dstIPv4 + ";srcPort=" + srcPort + ";dstPort=" + dstPort;
+		
+		// // // // Get interface to fwd packet on, if exists.
+		// // // Interface targetInterface = interfaceService.getMatchingInterface(destIpAddress);
 		
 		
 		//TODO: call server and process packet through ML algorithm here.
@@ -138,7 +176,7 @@ public class MLfirewall {
 			PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			
-			out.println("Data going to MLfirewallServer.py");
+			out.println(sendToServer);
 			String responseBack = in.readLine();
 			
 			if(responseBack.equals("ALLOW")) {
@@ -153,13 +191,15 @@ public class MLfirewall {
 			log.warn("Server Connection Error:", e);
 		}
 		
+		
+		//TODO: use something other than MAC for this.
 		if(SERVER_DECISION_ALLOW) {
-			log.warn(MSG_ALLOWING, src, dst, deviceId);
-			allowPackets(deviceId, src, dst);
+			log.warn(MSG_ALLOWING, srcMAC, dstMAC, deviceId);
+			allowPackets(deviceId, srcMAC, dstMAC);
 //			context.send();
 		} else {
-			log.warn(MSG_BLOCKING, src, dst, deviceId);
-			banPackets(deviceId, src, dst);
+			log.warn(MSG_BLOCKING, srcMAC, dstMAC, deviceId);
+			banPackets(deviceId, srcMAC, dstMAC);
 			context.block();
 		}
 		
@@ -201,8 +241,7 @@ public class MLfirewall {
     private class MyPacketProcessor implements PacketProcessor {
         @Override
         public void process(PacketContext context) {
-            Ethernet eth = context.inPacket().parsed();
-			processPacket(context, eth);
+			processPacket(context);
         }
     }
 
