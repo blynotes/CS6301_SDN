@@ -154,7 +154,7 @@ public class MLfirewall {
 			dstIPv4 = IpAddress.valueOf(ipv4.getDestinationAddress());
 		} else {
 			// only handle IPv4 packets. Let all other message types pass.
-			log.warn(MSG_ALLOWING, srcMAC, dstMAC, deviceId);
+			log.warn("{} : {} : {} : {} : {}", MSG_ALLOWING, eth.getEtherType(), srcMAC, dstMAC, deviceId);
 			allowPackets(deviceId, srcMAC, dstMAC);
 			return;
 		}
@@ -198,20 +198,20 @@ public class MLfirewall {
 				SERVER_DECISION_ALLOW = false;
 			}
 			
-			log.warn("Server decided:", responseBack);
+			log.warn("Server decided: {}", responseBack);
 			
 		} catch(Exception e) {
-			log.warn("Server Connection Error:", e);
+			log.warn("Server Connection Error: {}", e);
 		}
 		
 		
 		//TODO: use something other than MAC for this.
 		if(SERVER_DECISION_ALLOW) {
-			log.warn(MSG_ALLOWING, srcMAC, dstMAC, deviceId);
+			log.warn("{} : {} : {} : {}", MSG_ALLOWING, srcMAC, dstMAC, deviceId);
 			allowPackets(deviceId, srcMAC, dstMAC);
 //			context.send();
 		} else {
-			log.warn(MSG_BLOCKING, srcMAC, dstMAC, deviceId);
+			log.warn("{} : {} : {} : {}", MSG_BLOCKING, srcMAC, dstMAC, deviceId);
 			banPackets(deviceId, srcMAC, dstMAC);
 			context.block();
 		}
@@ -311,7 +311,7 @@ public class MLfirewall {
 				Criterion criterion = flowRule.selector().getCriterion(ETH_SRC);
 				MacAddress src = ((EthCriterion) criterion).mac();
 				MacAddress dst = ((EthCriterion) criterion).mac();
-				log.warn(MSG_FLOW_REMOVED, src, dst, flowRule.deviceId());
+				log.warn("{} : {} : {} : {}", MSG_FLOW_REMOVED, src, dst, flowRule.deviceId());
 		    }
 		}
     }
