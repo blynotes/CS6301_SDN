@@ -135,22 +135,22 @@ public class MLfirewall {
 		ConnectPoint connectPoint = pkt.receivedFrom();
 		DeviceId deviceId = connectPoint.deviceId();
 		
-		// initialize variables
-		IPv4 ipv4;
-		IpAddress srcIPv4;
-		IpAddress dstIPv4;
-		
 		// Get L2 Info.
 		Ethernet eth = pkt.parsed();
 		MacAddress srcMAC = eth.getSourceMAC();
 		MacAddress dstMAC = eth.getDestinationMAC();
 		
+		
 		// Get L3 Info.
+		// initialize L3 variables.
+		IPv4 ipv4;
+		IpAddress srcIPv4;
+		IpAddress dstIPv4;
 		if (eth.getEtherType() == Ethernet.TYPE_IPV4) {
 			//https://github.com/opennetworkinglab/onos/blob/master/apps/bgprouter/src/main/java/org/onosproject/bgprouter/IcmpHandler.java
-			IPv4 ipv4 = (IPv4) eth.getPayload();
-			IpAddress srcIPv4 = IpAddress.valueOf(ipv4.getSourceAddress());
-			IpAddress dstIPv4 = IpAddress.valueOf(ipv4.getDestinationAddress());
+			ipv4 = (IPv4) eth.getPayload();
+			srcIPv4 = IpAddress.valueOf(ipv4.getSourceAddress());
+			dstIPv4 = IpAddress.valueOf(ipv4.getDestinationAddress());
 		} else {
 			// only handle IPv4 packets. Let all other message types pass.
 			log.warn(MSG_ALLOWING, srcMAC, dstMAC, deviceId);
@@ -161,8 +161,8 @@ public class MLfirewall {
 		
 		
 		// Get L4 Info.
-		int srcPort = 0;
-		int dstPort = 0;
+		int srcPort;
+		int dstPort;
 		
 		if (ipv4.getProtocol() == IPv4.PROTOCOL_TCP) {
 			// https://github.com/opennetworkinglab/onos/blob/master/apps/bgprouter/src/main/java/org/onosproject/bgprouter/TunnellingConnectivityManager.java
@@ -175,7 +175,9 @@ public class MLfirewall {
 			dstPort = L4pkt.getDestinationPort();
 		} else {
 			// Not TCP or UDP.
-			// Let it use default port value of 0 assigned above.
+			// Let it use default port value of 0.
+			srcPort = 0;
+			dstPort = 0;
 		}
 		
 		String sendToServer = "srcMAC=" + srcMAC + ";dstMAC=" + dstMAC + ";srcIPv4=" + srcIPv4 + ";dstIPv4=" + dstIPv4 + ";srcPort=" + srcPort + ";dstPort=" + dstPort;
