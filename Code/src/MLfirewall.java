@@ -146,6 +146,7 @@ public class MLfirewall {
 		IPv4 ipv4;
 		IpAddress srcIPv4;
 		IpAddress dstIPv4;
+		
 		if (eth.getEtherType() == Ethernet.TYPE_IPV4) {
 			//https://github.com/opennetworkinglab/onos/blob/master/apps/bgprouter/src/main/java/org/onosproject/bgprouter/IcmpHandler.java
 			ipv4 = (IPv4) eth.getPayload();
@@ -157,7 +158,6 @@ public class MLfirewall {
 			allowPackets(deviceId, srcMAC, dstMAC);
 			return;
 		}
-		
 		
 		
 		// Get L4 Info.
@@ -180,14 +180,14 @@ public class MLfirewall {
 			dstPort = 0;
 		}
 		
-		String sendToServer = "srcMAC=" + srcMAC + ";dstMAC=" + dstMAC + ";srcIPv4=" + srcIPv4 + ";dstIPv4=" + dstIPv4 + ";srcPort=" + srcPort + ";dstPort=" + dstPort;
-		
 		// If cannot reach the server, then allow the packets.
 		boolean SERVER_DECISION_ALLOW = true;
 		try {
 			Socket socket = new Socket(SERVER_IP, SERVER_PORT);
 			PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
 			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			
+			String sendToServer = "srcMAC=" + srcMAC + ";dstMAC=" + dstMAC + ";srcIPv4=" + srcIPv4 + ";dstIPv4=" + dstIPv4 + ";srcPort=" + srcPort + ";dstPort=" + dstPort;
 			
 			out.println(sendToServer);
 			String responseBack = in.readLine();
