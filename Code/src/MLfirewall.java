@@ -75,11 +75,11 @@ public class MLfirewall {
     private static Logger log = LoggerFactory.getLogger(MLfirewall.class);
 
     private static final String MSG_BLOCKING =
-            "Blocking Traffic";
+		    "Blocking Traffic";
     private static final String MSG_ALLOWING =
-            "Allowing Traffic";
+		    "Allowing Traffic";
     private static final String MSG_FLOW_REMOVED =
-            "Flow Removed";
+		    "Flow Removed";
 
     private static final int PRIORITY = 128;
     private static final int DROPALLOW_PRIORITY = 129;
@@ -103,28 +103,28 @@ public class MLfirewall {
 
     // Selector for traffic that is to be intercepted
     private final TrafficSelector intercept = DefaultTrafficSelector.builder()
-            .matchEthType(Ethernet.TYPE_IPV4).build();
+		    .matchEthType(Ethernet.TYPE_IPV4).build();
 
     // Means to track detected pings from each device on a temporary basis
     // // // private final HashMultimap<DeviceId, PingRecord> pings = HashMultimap.create();
 
     @Activate
     public void activate() {
-        appId = coreService.registerApplication("org.MLfirewall.app",
-                                                () -> log.info("MLfirewall registered"));
-        packetService.addProcessor(packetProcessor, PRIORITY);
-        flowRuleService.addListener(flowListener);
-        packetService.requestPackets(intercept, PacketPriority.CONTROL, appId,
-                                     Optional.empty());
-        log.info("Started");
+		appId = coreService.registerApplication("org.MLfirewall.app",
+												() -> log.info("MLfirewall registered"));
+		packetService.addProcessor(packetProcessor, PRIORITY);
+		flowRuleService.addListener(flowListener);
+		packetService.requestPackets(intercept, PacketPriority.CONTROL, appId,
+								     Optional.empty());
+		log.info("Started");
     }
 
     @Deactivate
     public void deactivate() {
-        packetService.removeProcessor(packetProcessor);
-        flowRuleService.removeFlowRulesById(appId);
-        flowRuleService.removeListener(flowListener);
-        log.info("Stopped");
+		packetService.removeProcessor(packetProcessor);
+		flowRuleService.removeFlowRulesById(appId);
+		flowRuleService.removeListener(flowListener);
+		log.info("Stopped");
     }
 
     // Processes the specified packet.
@@ -135,14 +135,18 @@ public class MLfirewall {
 		ConnectPoint connectPoint = pkt.receivedFrom();
 		DeviceId deviceId = connectPoint.deviceId();
 		
+		// initialize variables
+		IPv4 ipv4;
+		IpAddress srcIPv4;
+		IpAddress dstIPv4;
+		
 		// Get L2 Info.
 		Ethernet eth = pkt.parsed();
-        MacAddress srcMAC = eth.getSourceMAC();
-        MacAddress dstMAC = eth.getDestinationMAC();
-		
+		MacAddress srcMAC = eth.getSourceMAC();
+		MacAddress dstMAC = eth.getDestinationMAC();
 		
 		// Get L3 Info.
-		if (eth.getEtherType() == Ethernet.TYPE_IPv4) {
+		if (eth.getEtherType() == Ethernet.TYPE_IPV4) {
 			//https://github.com/opennetworkinglab/onos/blob/master/apps/bgprouter/src/main/java/org/onosproject/bgprouter/IcmpHandler.java
 			IPv4 ipv4 = (IPv4) eth.getPayload();
 			IpAddress srcIPv4 = IpAddress.valueOf(ipv4.getSourceAddress());
@@ -214,99 +218,99 @@ public class MLfirewall {
 
     // Installs a drop rule for the packets between given src/dst.
     private void banPackets(DeviceId deviceId, MacAddress src, MacAddress dst) {
-        TrafficSelector selector = DefaultTrafficSelector.builder()
-                .matchEthSrc(src).matchEthDst(dst).build();
-        TrafficTreatment drop = DefaultTrafficTreatment.builder()
-                .drop().build();
+		TrafficSelector selector = DefaultTrafficSelector.builder()
+				.matchEthSrc(src).matchEthDst(dst).build();
+		TrafficTreatment drop = DefaultTrafficTreatment.builder()
+				.drop().build();
 
-        flowObjectiveService.forward(deviceId, DefaultForwardingObjective.builder()
-                .fromApp(appId)
-                .withSelector(selector)
-                .withTreatment(drop)
-                .withFlag(ForwardingObjective.Flag.VERSATILE)
-                .withPriority(DROPALLOW_PRIORITY)
-                .add());
+		flowObjectiveService.forward(deviceId, DefaultForwardingObjective.builder()
+				.fromApp(appId)
+				.withSelector(selector)
+				.withTreatment(drop)
+				.withFlag(ForwardingObjective.Flag.VERSATILE)
+				.withPriority(DROPALLOW_PRIORITY)
+				.add());
     }
 
     // Installs an allow rule for the packets between given src/dst.
     private void allowPackets(DeviceId deviceId, MacAddress src, MacAddress dst) {
-        TrafficSelector selector = DefaultTrafficSelector.builder()
-                .matchEthSrc(src).matchEthDst(dst).build();
-        TrafficTreatment allow = DefaultTrafficTreatment.builder()
-                .build();
+		TrafficSelector selector = DefaultTrafficSelector.builder()
+				.matchEthSrc(src).matchEthDst(dst).build();
+		TrafficTreatment allow = DefaultTrafficTreatment.builder()
+				.build();
 
-        flowObjectiveService.forward(deviceId, DefaultForwardingObjective.builder()
-                .fromApp(appId)
-                .withSelector(selector)
-                .withTreatment(allow)
-                .withFlag(ForwardingObjective.Flag.VERSATILE)
-                .withPriority(DROPALLOW_PRIORITY)
-                .add());
+		flowObjectiveService.forward(deviceId, DefaultForwardingObjective.builder()
+				.fromApp(appId)
+				.withSelector(selector)
+				.withTreatment(allow)
+				.withFlag(ForwardingObjective.Flag.VERSATILE)
+				.withPriority(DROPALLOW_PRIORITY)
+				.add());
     }
 
     // Intercepts packets
     private class MyPacketProcessor implements PacketProcessor {
-        @Override
-        public void process(PacketContext context) {
+		@Override
+		public void process(PacketContext context) {
 			processPacket(context);
-        }
+		}
     }
 
     // // // // Record of a ping between two end-station MAC addresses
     // // // private class PingRecord {
-        // // // private final MacAddress src;
-        // // // private final MacAddress dst;
+		// // // private final MacAddress src;
+		// // // private final MacAddress dst;
 
-        // // // PingRecord(MacAddress src, MacAddress dst) {
-            // // // this.src = src;
-            // // // this.dst = dst;
-        // // // }
+		// // // PingRecord(MacAddress src, MacAddress dst) {
+		    // // // this.src = src;
+		    // // // this.dst = dst;
+		// // // }
 
-        // // // @Override
-        // // // public int hashCode() {
-            // // // return Objects.hash(src, dst);
-        // // // }
+		// // // @Override
+		// // // public int hashCode() {
+		    // // // return Objects.hash(src, dst);
+		// // // }
 
-        // // // @Override
-        // // // public boolean equals(Object obj) {
-            // // // if (this == obj) {
-                // // // return true;
-            // // // }
-            // // // if (obj == null || getClass() != obj.getClass()) {
-                // // // return false;
-            // // // }
-            // // // final PingRecord other = (PingRecord) obj;
-            // // // return Objects.equals(this.src, other.src) && Objects.equals(this.dst, other.dst);
-        // // // }
+		// // // @Override
+		// // // public boolean equals(Object obj) {
+		    // // // if (this == obj) {
+				// // // return true;
+		    // // // }
+		    // // // if (obj == null || getClass() != obj.getClass()) {
+				// // // return false;
+		    // // // }
+		    // // // final PingRecord other = (PingRecord) obj;
+		    // // // return Objects.equals(this.src, other.src) && Objects.equals(this.dst, other.dst);
+		// // // }
     // // // }
 
     // // // // Prunes the given ping record from the specified device.
     // // // private class PingPruner extends TimerTask {
-        // // // private final DeviceId deviceId;
-        // // // private final PingRecord ping;
+		// // // private final DeviceId deviceId;
+		// // // private final PingRecord ping;
 
-        // // // public PingPruner(DeviceId deviceId, PingRecord ping) {
-            // // // this.deviceId = deviceId;
-            // // // this.ping = ping;
-        // // // }
+		// // // public PingPruner(DeviceId deviceId, PingRecord ping) {
+		    // // // this.deviceId = deviceId;
+		    // // // this.ping = ping;
+		// // // }
 
-        // // // @Override
-        // // // public void run() {
-            // // // pings.remove(deviceId, ping);
-        // // // }
+		// // // @Override
+		// // // public void run() {
+		    // // // pings.remove(deviceId, ping);
+		// // // }
     // // // }
 
     // Listens for our removed flows.
     private class InternalFlowListener implements FlowRuleListener {
-        @Override
-        public void event(FlowRuleEvent event) {
-            FlowRule flowRule = event.subject();
-            if (event.type() == RULE_REMOVED && flowRule.appId() == appId.id()) {
-                Criterion criterion = flowRule.selector().getCriterion(ETH_SRC);
-                MacAddress src = ((EthCriterion) criterion).mac();
-                MacAddress dst = ((EthCriterion) criterion).mac();
-                log.warn(MSG_FLOW_REMOVED, src, dst, flowRule.deviceId());
-            }
-        }
+		@Override
+		public void event(FlowRuleEvent event) {
+		    FlowRule flowRule = event.subject();
+		    if (event.type() == RULE_REMOVED && flowRule.appId() == appId.id()) {
+				Criterion criterion = flowRule.selector().getCriterion(ETH_SRC);
+				MacAddress src = ((EthCriterion) criterion).mac();
+				MacAddress dst = ((EthCriterion) criterion).mac();
+				log.warn(MSG_FLOW_REMOVED, src, dst, flowRule.deviceId());
+		    }
+		}
     }
 }
