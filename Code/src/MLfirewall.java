@@ -44,6 +44,7 @@ import org.onosproject.net.flow.criteria.EthCriterion;
 import org.onosproject.net.flowobjective.DefaultForwardingObjective;
 import org.onosproject.net.flowobjective.FlowObjectiveService;
 import org.onosproject.net.flowobjective.ForwardingObjective;
+import org.onosproject.net.packet.InboundPacket;
 import org.onosproject.net.packet.PacketContext;
 import org.onosproject.net.packet.PacketPriority;
 import org.onosproject.net.packet.PacketProcessor;
@@ -128,7 +129,7 @@ public class MLfirewall {
 
     // Processes the specified packet.
     private void processPacket(PacketContext context) {
-		InboundPkt pkt = context.inPacket()
+		InboundPacket pkt = context.inPacket();
 		
 		// Get where the packet was received from.
 		ConnectPoint connectPoint = pkt.receivedFrom();
@@ -139,35 +140,41 @@ public class MLfirewall {
         MacAddress srcMAC = eth.getSourceMAC();
         MacAddress dstMAC = eth.getDestinationMAC();
 		
-		//https://github.com/opennetworkinglab/onos/blob/master/apps/bgprouter/src/main/java/org/onosproject/bgprouter/IcmpHandler.java
-		// Get L3 Info.
-		IPv4 ipv4 = (IPv4) eth.getPayload();
-		IpAddress srcIPv4 = IpAddress.valueOf(ipv4.getSourceAddress());
-        IpAddress dstIPv4 = IpAddress.valueOf(ipv4.getDestinationAddress());
 		
-		// https://github.com/opennetworkinglab/onos/blob/master/apps/bgprouter/src/main/java/org/onosproject/bgprouter/TunnellingConnectivityManager.java
+		// Get L3 Info.
+		if (eth.getEtherType() == Ethernet.TYPE_IPv4) {
+			//https://github.com/opennetworkinglab/onos/blob/master/apps/bgprouter/src/main/java/org/onosproject/bgprouter/IcmpHandler.java
+			IPv4 ipv4 = (IPv4) eth.getPayload();
+			IpAddress srcIPv4 = IpAddress.valueOf(ipv4.getSourceAddress());
+			IpAddress dstIPv4 = IpAddress.valueOf(ipv4.getDestinationAddress());
+		} else {
+			// only handle IPv4 packets. Let all other message types pass.
+			log.warn(MSG_ALLOWING, srcMAC, dstMAC, deviceId);
+			allowPackets(deviceId, srcMAC, dstMAC);
+			return;
+		}
+		
+		
+		
 		// Get L4 Info.
+		int srcPort = 0;
+		int dstPort = 0;
+		
 		if (ipv4.getProtocol() == IPv4.PROTOCOL_TCP) {
+			// https://github.com/opennetworkinglab/onos/blob/master/apps/bgprouter/src/main/java/org/onosproject/bgprouter/TunnellingConnectivityManager.java
 			TCP L4pkt = (TCP) ipv4.getPayload();
-			int srcPort = L4pkt.getSourcePort();
-			int dstPort = L4pkt.getDestinationPort();
+			srcPort = L4pkt.getSourcePort();
+			dstPort = L4pkt.getDestinationPort();
 		} else if (ipv4.getProtocol() == IPv4.PROTOCOL_UDP) {
 			UDP L4pkt = (UDP) ipv4.getPayload();
-			int srcPort = L4pkt.getSourcePort();
-			int dstPort = L4pkt.getDestinationPort();
+			srcPort = L4pkt.getSourcePort();
+			dstPort = L4pkt.getDestinationPort();
 		} else {
 			// Not TCP or UDP.
-			int srcPort = null;
-			int dstPort = null;
+			// Let it use default port value of 0 assigned above.
 		}
 		
 		String sendToServer = "srcMAC=" + srcMAC + ";dstMAC=" + dstMAC + ";srcIPv4=" + srcIPv4 + ";dstIPv4=" + dstIPv4 + ";srcPort=" + srcPort + ";dstPort=" + dstPort;
-		
-		// // // // Get interface to fwd packet on, if exists.
-		// // // Interface targetInterface = interfaceService.getMatchingInterface(destIpAddress);
-		
-		
-		//TODO: call server and process packet through ML algorithm here.
 		
 		// If cannot reach the server, then allow the packets.
 		boolean SERVER_DECISION_ALLOW = true;
