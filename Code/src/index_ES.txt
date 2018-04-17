@@ -21,8 +21,7 @@ PUT /netflowrepo/entry/_mapping
 			"sumOfFlows" : { "type" : "long" },
 			"sumOfBytes" : { "type" : "long" },
 			"uniqDstIPs" : { "type" : "integer" },
-			"uniqDstPorts" : { "type" : "integer" },
-			"timestamp" : { "type" : "date", "format": "yyyy-MM-dd'T'HH:mm:ss"}
+			"uniqDstPorts" : { "type" : "integer" }
 		}
 	}
 }
