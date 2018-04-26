@@ -1,0 +1,74 @@
+count
+	Number of flows exported in this packet (1-30)
+dOctets
+	Total number of Layer 3 bytes in the packets of the flow
+dPkts
+	Packets in the flow
+dst_mask
+	destination address prefix mask bits
+dstaddr
+	N/A
+dstaddr_s
+	Destination IP
+dstas
+	N/A
+dstport
+	TCP/UDP destination port
+engineid
+	slot number of the flow-switching engine
+enginetype
+	type of flow-switching engine
+first
+	SysUptime at start of flow
+flowseq
+	sequence counter of total flows seen
+id
+last
+	SysUptime at the time the last packet of flow was received
+length
+nanos
+	Current count of nanoseconds since 0000 UTC 1970
+nexthop
+	N/A
+nexthop_s
+	Next hop router IP
+packetid
+proto
+	IP protocol type (for example, TCP = 6; UDP = 17)
+raw_first
+	N/A
+raw_last
+	N/A
+raw_sampling
+	N/A
+readerId
+	N/A
+samplingint
+samplingmode
+seconds
+	Current count of seconds since 0000 UTC 1970
+sender
+	IP of switch
+snmpinput
+	SNMP Index of Input Interface
+snmponput
+	SNMP Index of Output Interface
+src_mask
+	source address prefix mask bits
+srcaddr
+	N/A
+srcaddr_s
+	Source IP
+srcas
+	N/A
+srcport
+	TCP/UDP source port
+tcp_flags
+	Cumulative OR of TCP flags
+timestamp
+tos
+	IP Type of Service
+uptime
+	current time in milliseconds since export device booted
+version
+	NetFlow export format version number

@@ -1,0 +1,120 @@
+from __future__ import print_function
+import sys
+
+# Sample code at https://www.rittmanmead.com/blog/2017/01/getting-started-with-spark-streaming-with-python-and-kafka/
+# https://cambridgespark.com/content/tutorials/interactively-analyse-100GB-of-JSON-data-with-Spark/index.html
+# http://nbviewer.jupyter.org/github/jkthompson/pyspark-pictures/blob/master/pyspark-pictures.ipynb
+# http://nbviewer.jupyter.org/github/jkthompson/pyspark-pictures/blob/master/pyspark-pictures-dataframes.ipynb
+
+
+# https://spark.apache.org/docs/2.3.0/api/python/pyspark.html
+from pyspark import SparkConf, SparkContext
+# https://spark.apache.org/docs/2.3.0/api/python/pyspark.streaming.html
+from pyspark.streaming import StreamingContext
+# https://spark.apache.org/docs/2.3.0/api/python/pyspark.streaming.html#module-pyspark.streaming.kafka
+from pyspark.streaming.kafka import KafkaUtils
+import json
+from elasticsearch import Elasticsearch
+
+
+# https://milindjagre.wordpress.com/2016/11/30/spark-python-passing-function/
+# http://mlwhiz.com/blog/2015/09/07/Spark_Basics_Explained/
+
+
+# # # def CalcAvgSumBytesPerFlow(s):
+	# # # """Average Sum of Bytes per Netflow.  sumOfBytes/sumOfFlows."""
+	# # # pass
+
+# # # def CalcAvgCommTime(s):
+	# # # """Average communication time with each unique IP address.
+	# # # Sum(last - first) for src IP and dst IP."""
+	# # # s.pprint()
+	# # # first = s['timestampStart']
+	# # # last = s['timestampEnd']
+	
+	# # # diff = last - first
+	
+	# # # return (s['srcAddr'], diff)
+
+
+
+
+
+
+if __name__ == "__main__":
+	# SparkContext represents connection to a Spark cluster.
+	conf = SparkConf()
+	conf.setAppName("Kafka Spark App")
+	conf.setMaster('local[2]')
+	sc = SparkContext(conf=conf)
+	sc.setLogLevel("WARN")
+	
+	# StreamingContext represents connection to a Spark cluster from existing SparkContext.
+	ssc = StreamingContext(sc, 60)  # the number indicates how many seconds each batch lasts.
+	
+	# Creates an input stream that pulls events from Kafka.
+	kvs = KafkaUtils.createStream(ssc, "streamsetApp:2181", "spark-streaming-consumer", {"NETFLOW":1})
+	parsed = kvs.map(lambda x: json.loads(x[1]))
+	# # # parsed.pprint()
+	
+	# Get only elements that are needed.
+	netflow_dict = parsed.map(lambda x: ({'srcAddr': x['srcaddr_s'], 'srcPort': x['srcport'], 'dstAddr': x['dstaddr_s'], 'dstPort': x['dstport'], 'tcpFlags': x['tcp_flags'], 'protocol': x['proto'], 'timestampStart': x['first'], 'timestampEnd': x['last'], 'numBytes': x['dOctets'], 'numFlows': x['count']}))
+	netflow_dict.pprint()
+	
+	
+	# Get Sum of Flows sent from Source IP in window.
+	sumOfFlows = netflow_dict.filter(lambda e: "srcAddr" in e).map(lambda e: (e["srcAddr"], e["numFlows"])).reduceByKey(lambda x, y: x + y)
+	sumOfFlows.pprint()
+	
+	# Get sum of Bytes sent from Source IP in window.
+	sumOfBytes = netflow_dict.filter(lambda e: "srcAddr" in e).map(lambda e: (e["srcAddr"], e["numBytes"])).reduceByKey(lambda x, y: x + y)
+	sumOfBytes.pprint()
+	
+	# Count of unique dest IP that source IP talked to in window.
+	# First map gets unique src/dst pairs.  Second map reduces just to srcAddr and counts number of uniq dstAddr.
+	# # # tmp1 = netflow_dict.filter(lambda e: "srcAddr" in e).map(lambda e: (e["srcAddr"], e["dstAddr"])).countByValue()
+	# # # tmp1.pprint(100)
+	uniqDstIPs = netflow_dict.filter(lambda e: "srcAddr" in e).map(lambda e: (e["srcAddr"], e["dstAddr"])).countByValue().map(lambda e: e[0][0]).countByValue()
+	uniqDstIPs.pprint()
+	
+	# Count of unique destination ports that source IP talked to in window.
+	# First map gets unique src/dst pairs.  Second map reduces just to srcAddr and counts number of uniq dstPort.
+	# # # tmp2 = netflow_dict.filter(lambda e: "srcAddr" in e).map(lambda e: (e["srcAddr"], e["dstPort"])).countByValue()
+	# # # tmp2.pprint(500)
+	uniqDstPorts = netflow_dict.filter(lambda e: "srcAddr" in e).map(lambda e: (e["srcAddr"], e["dstPort"])).countByValue().map(lambda e: e[0][0]).countByValue()
+	uniqDstPorts.pprint()
+	
+	
+	
+	# # # test = netflow_dict.filter(lambda e: "srcAddr" in e).map(lambda e: (e, CalcAvgCommTime))
+	# # # test.pprint()
+	
+	# # # # Average Sum of Bytes per Netflow.  sumOfBytes/sumOfFlows
+	# # # # # # # # # avgSumBytesPerFlow = parsed.filter(lambda e: "srcaddr_s" in e).map(lambda e: sumOfBytes[e] / sumOfFlows[e])
+	# # # # # # avgSumBytesPerFlow = netflow_dict.filter(lambda e: "srcAddr" in e).map(lambda e: (e["srcAddr"], sumOfBytes[e["srcAddr"]] / sumOfFlows[e["srcAddr"]]))
+	# # # # # # avgSumBytesPerFlow.pprint()
+	
+	# # # # Average communication time with each unique IP address.
+	# # # # Sum(last - first) for src IP and dst IP.
+	# # # # # # lastTimeStampSum = parsed.filter(lambda e: "srcaddr_s" in e and "last" in e).map(lambda e: (e["last"], 1)).reduceByKey(lambda x, y: x + y).collect()
+	# # # # # # firstTimeStampSum =  = parsed.filter(lambda e: "srcaddr_s" in e and "first" in e).map(lambda e: (e["first"], 1)).reduceByKey(lambda x, y: x + y).collect()
+	# # # # # # subCommTime = lastTimeStampSum.subtract(firstTimeStampSum)
+	# # # # # # avgCommTime = parsed.filter(lambda e: "srcaddr_s" in e).map(lambda e: subCommTime[e] / sumOfFlows[e])
+	# # # # # # avgCommTime.pprint()
+	# # # lastTimeStampSum = netflow_dict.filter(lambda e: "srcAddr" in e).map(lambda e: (e["srcAddr"], e["timestampEnd"])).reduceByKey(lambda x, y: x + y)
+	# # # lastTimeStampSum.pprint()
+	# # # firstTimeStampSum = netflow_dict.filter(lambda e: "srcAddr" in e).map(lambda e: (e["srcAddr"], e["timestampStart"])).reduceByKey(lambda x, y: x + y)
+	# # # firstTimeStampSum.pprint()
+	# # # # # # subCommTime = lastTimeStampSum.subtract(firstTimeStampSum)
+	# # # # # # subCommTime = netflow_dict.filter(lambda e: "srcAddr" in e).map(lambda e: (e["timestampStart"], e["timestampEnd"])).reduceByKey(lambda x, y: y - x)
+	# # # # # # subCommTime.pprint()
+	# # # # # # avgCommTime = netflow_dict.filter(lambda e: "srcaddr_s" in e).map(lambda e: subCommTime[e] / sumOfFlows[e])
+	# # # # # # avgCommTime.pprint()
+	
+	
+	
+	# Start the execution of streams.
+	ssc.start()
+	
+	# Wait for execution to stop.
+	ssc.awaitTermination()

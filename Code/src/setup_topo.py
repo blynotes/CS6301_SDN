@@ -1,4 +1,17 @@
 #!/usr/bin/python
+# Copyright 2018 Stephen Blystone, Taniya Riar, Juhi Bhandari, & Ishwank Singh
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+    # http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """
 Inspiration from following sources:
@@ -22,9 +35,13 @@ import os
 import re
 import sys
 import subprocess
+import argparse
 
 
 DEBUGMODE = True
+
+# Used to not start Client or Server programs.
+TESTMODE = False
 
 def printDebugMsg(msg):
 	if DEBUGMODE:
@@ -34,7 +51,7 @@ def printDebugMsg(msg):
 CONTROLLER_IP = "10.28.34.39"
 CONTROLLER_PORT = 6633
 
-NETFLOW_TARGET = "10.28.34.17:9995"
+NETFLOW_TARGETS = ["10.28.34.17:9995", "10.28.34.17:9997"]
 
 
 class MyTopo(Topo):
@@ -134,7 +151,7 @@ def runMyTopo():
 			printDebugMsg("switch {0} is being skipped".format(s))
 			continue
 		
-		netflowCommand = "ovs-vsctl -- set bridge {0} netflow=@nf -- --id=@nf create Netflow targets=\"{1}\" active-timeout=60".format(s, NETFLOW_TARGET)
+		netflowCommand = "ovs-vsctl -- set bridge {0} netflow=@nf -- --id=@nf create Netflow targets=[\"{1}\",\"{2}\"] active-timeout=60".format(s, NETFLOW_TARGETS[0], NETFLOW_TARGETS[1])
 		
 		printDebugMsg("NETFLOW command is: {0}".format(netflowCommand))
 		printDebugMsg("netflowCommand.split() command is: {0}".format(netflowCommand.split()))
@@ -147,12 +164,12 @@ def runMyTopo():
 			net.stop()
 			sys.exit()
 	
-	
-	# Run the programs that need run on various hosts.
-	for h in net.hosts:
-		printDebugMsg("Starting Client and Server on {0}. IP is {1}".format(h, h.IP()))
-		h.cmd("python3 Client.py --ip={0} &".format(h.IP()))
-		h.cmd("python3 Server.py --ip={0} &".format(h.IP()))
+	if not TESTMODE:
+		# Run the programs that need run on various hosts.
+		for h in net.hosts:
+			printDebugMsg("Starting Client and Server on {0}. IP is {1}".format(h, h.IP()))
+			h.cmd("python3 Client.py --ip={0} &".format(h.IP()))
+			h.cmd("python3 Server.py --ip={0} &".format(h.IP()))
 	
 	# Let user enter CLI to run commands.
 	CLI(net)
@@ -163,6 +180,15 @@ def runMyTopo():
 
 if __name__ == '__main__':
 	setLogLevel('info')
+	
+	parser = argparse.ArgumentParser(description='Setup Topology')
+	parser.add_argument('--test', action='store_true')
+	
+	args = parser.parse_args()
+	
+	if args.test:
+		TESTMODE = True
+	
 	runMyTopo()
 
 topos = {

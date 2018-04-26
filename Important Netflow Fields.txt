@@ -1,0 +1,8 @@
+{u'tcp_flags': 20, u'dstaddr_s': u'10.0.0.2', u'dPkts': 1, u'raw_last': 4554, u'proto': 6, u'tos': 0, u'srcaddr_s': u'10.0.0.1', u'flowseq': 1, u'dstport': 57470, u'first': 1523414640469, u'dOctets': 54, u'count': 2, u'last': 1523414640469, u'srcport': 80, u'raw_first': 4554}
+
+{u'tcp_flags': 2, u'dstaddr_s': u'10.0.0.1', u'dPkts': 1, u'raw_last': 4546, u'proto': 6, u'tos': 0, u'srcaddr_s': u'10.0.0.2', u'flowseq': 1, u'dstport': 80, u'first': 1523414640461, u'dOctets': 74, u'count': 2, u'last': 1523414640461, u'srcport': 57470, u'raw_first': 4546}
+
+{u'tcp_flags': 26, u'dstaddr_s': u'10.0.0.1', u'dPkts': 3, u'raw_last': 50436, u'proto': 6, u'tos': 0, u'srcaddr_s': u'10.0.0.2', u'flowseq': 3, u'dstport': 8000, u'first': 1523414686324, u'dOctets': 283, u'count': 2, u'last': 1523414686351, u'srcport': 37348, u'raw_first': 50409}
+
+{u'tcp_flags': 18, u'dstaddr_s': u'10.0.0.2', u'dPkts': 2, u'raw_last': 50437, u'proto': 6, u'tos': 0, u'srcaddr_s': u'10.0.0.1', u'flowseq': 3, u'dstport': 37348, u'first': 1523414686352, u'dOctets': 140, u'last': 1523414686352, u'srcport': 8000, u'raw_first': 50437}
+
