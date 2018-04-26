@@ -1,3 +1,3 @@
 # CS6301_SDN
 
-Project for Software Defined Networks
+Machine Learning Approach for an Anomaly Intrusion Detection System using ONOS
